@@ -16,12 +16,21 @@ def fetch_temperature_values(grid_url):
     props = r.json().get("properties", {})
     return props.get("temperature", {}).get("values", [])
 
+def fetch_grid_props(grid_url):
+    """Fetch the full grid properties once and return them (avoids duplicate requests)."""
+    r = requests.get(grid_url, headers={"User-Agent": USER_AGENT}, timeout=10)
+    r.raise_for_status()
+    return r.json().get("properties", {})
+
 def iso_to_aware_dt(iso_str):
     start = iso_str.split("/")[0]
     return datetime.fromisoformat(start)
 
 def c_to_f(c):
     return c * 9/5 + 32
+
+def kmh_to_mph(kmh):
+    return kmh * 0.621371
 
 def daily_high_low_now(lat, lon, tz_name="America/New_York"):
     grid_url = get_grid_url(lat, lon)
@@ -53,3 +62,32 @@ def daily_high_low_now(lat, lon, tz_name="America/New_York"):
         "high_f": round(max(today_vals), 1),
         "low_f": round(min(today_vals), 1)
     }
+
+def daily_max_wind_now(lat, lon, tz_name="America/New_York"):
+    """Return the highest forecast wind speed (mph) for today."""
+    grid_url = get_grid_url(lat, lon)
+    props = fetch_grid_props(grid_url)
+    wind_values = props.get("windSpeed", {}).get("values", [])
+
+    tz = ZoneInfo(tz_name)
+    rows = []
+
+    for v in wind_values:
+        val = v.get("value")
+        if val is None:
+            continue
+
+        dt_utc = iso_to_aware_dt(v["validTime"])
+        if dt_utc.tzinfo is None:
+            dt_utc = dt_utc.replace(tzinfo=timezone.utc)
+
+        local_dt = dt_utc.astimezone(tz)
+        rows.append((local_dt.date(), kmh_to_mph(val)))
+
+    today = date.today()
+    today_vals = [w for d, w in rows if d == today]
+
+    if not today_vals:
+        return None
+
+    return round(max(today_vals), 1)
