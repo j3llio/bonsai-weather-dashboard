@@ -10,7 +10,7 @@ st.set_page_config(page_title="Bonsai Weather Dashboard", page_icon="🌱", layo
 st.title("🌱 Bonsai Weather Dashboard")
 
 # --- Load tree data ---
-df = pd.read_csv("data.csv")
+df = pd.read_csv(os.path.join(os.path.dirname(__file__), "Tree_data.csv"))
 
 # --- Sidebar ---
 with st.sidebar:
