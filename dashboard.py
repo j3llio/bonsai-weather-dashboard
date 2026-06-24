@@ -6,6 +6,16 @@ from weather.rules import check_weather_rules
 from visuals import create_bonsai_chart
 
 st.set_page_config(page_title="Bonsai Weather Dashboard", page_icon="🌱", layout="wide")
+st.markdown(
+    """
+    <style>
+    [data-testid="stAppViewContainer"] {
+        background-color: #F0F2F6;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 st.title("🌱 Bonsai Weather Dashboard")
 
