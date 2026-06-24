@@ -11,7 +11,7 @@ st.title("🌱 Bonsai Weather Dashboard")
 
 # --- Load tree data ---
 import os
-df = pd.read_csv(os.path.join(os.path.dirname(__file__), "data.csv"))
+df = pd.read_csv(os.path.join(os.path.dirname(__file__), "Data", "Tree_data.csv"))
 
 # --- Sidebar ---
 with st.sidebar:
