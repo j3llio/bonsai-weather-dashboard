@@ -1,39 +1,63 @@
 import streamlit as st
+import pandas as pd
 from weather.fetch import get_current_conditions
-from weather.high_lows import daily_high_low_now
+from weather.high_lows import daily_high_low_now, daily_max_wind_now
 from weather.rules import check_weather_rules
+from visuals import create_bonsai_chart
 
-st.set_page_config(page_title="Bonsai Weather Dashboard", page_icon="🌱")
+st.set_page_config(page_title="Bonsai Weather Dashboard", page_icon="🌱", layout="wide")
 
 st.title("🌱 Bonsai Weather Dashboard")
 
-# Fetch data
-conditions = get_current_conditions()
-hl = daily_high_low_now(35.0456, -85.3097)
+# --- Load tree data ---
+df = pd.read_csv("data.csv")
 
-temp = conditions["temperature_f"]
-wind = conditions["wind_mph"]
-high = hl["high_f"]
-low = hl["low_f"]
+# --- Sidebar ---
+with st.sidebar:
 
-alerts = check_weather_rules(high, wind)
+    # -- Weather --
+    st.subheader("☁️ Weather")
 
-# Layout
-col1, col2 = st.columns(2)
+    conditions = get_current_conditions()
+    hl = daily_high_low_now(35.0456, -85.3097)
+    max_wind = daily_max_wind_now(35.0456, -85.3097)
 
-with col1:
-    st.metric("Current Temp", f"{temp:.1f}°F")
-    st.metric("Today's High", f"{high:.1f}°F")
+    temp = conditions["temperature_f"]
+    wind = conditions["wind_mph"]
+    high = hl["high_f"]
+    low = hl["low_f"]
 
-with col2:
-    st.metric("Wind Speed", f"{wind:.1f} mph")
-    st.metric("Today's Low", f"{low:.1f}°F")
+    alerts = check_weather_rules(high, wind)
 
-st.divider()
+    col1, col2 = st.columns(2)
+    col1.metric("Temp", f"{temp:.1f}°F")
+    col1.metric("High", f"{high:.1f}°F")
+    col2.metric("Wind", f"{wind:.1f} mph")
+    col2.metric("Low", f"{low:.1f}°F")
 
-if alerts:
-    st.subheader("⚠️ Alerts")
-    for a in alerts:
-        st.error(a)
-else:
-    st.success("No alerts. Conditions normal.")
+    st.metric("Max Wind (forecast)", f"{max_wind:.1f} mph" if max_wind is not None else "N/A")
+
+    if alerts:
+        st.divider()
+        st.subheader("⚠️ Alerts")
+        for a in alerts:
+            st.error(a)
+    else:
+        st.success("✅ Conditions normal.")
+
+    st.divider()
+
+    # -- Tree list --
+    st.subheader("🌳 Your Trees")
+
+    for _, row in df.iterrows():
+        with st.expander(row["Tree"]):
+            st.write(f"☀️ **Sun needs:** {row['Sun']} hrs/day")
+            st.write(f"💧 **Water needs:** {row['Water']} / 10")
+            st.write(f"💨 **Wind tolerance:** {row['Wind']} / 10")
+            st.write(f"📈 **Growth rate:** {row['Growth']} / 10")
+
+# --- Main area: chart ---
+st.subheader("📊 Placement & Care Guide")
+fig = create_bonsai_chart(df)
+st.pyplot(fig, use_container_width=True)
